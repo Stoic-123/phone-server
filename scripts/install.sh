@@ -24,8 +24,13 @@ termux-wake-lock || true
 echo "[*] Updating package repositories..."
 pkg update -y && pkg upgrade -y
 
-# 4. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl, compilers
-echo "[*] Installing native toolchain & compilers..."
+# 4. Enable TUR (Termux User Repository) for pre-compiled Python wheels (pydantic, etc.)
+echo "[*] Setting up Termux repositories and pre-compiled wheels..."
+pkg install -y tur-repo || true
+pkg install -y python-pydantic || true
+
+# 5. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl
+echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, tmux..."
 pkg install -y \
     python \
     python-pip \
@@ -41,6 +46,9 @@ pkg install -y \
     curl \
     termux-api \
     termux-tools
+
+# Export Android API level for maturin/rust in case compilation is triggered
+export ANDROID_API_LEVEL=29
 
 # 5. Setup Termux Storage access (prompts Android permission dialog)
 echo "[*] Configuring Termux storage permissions..."

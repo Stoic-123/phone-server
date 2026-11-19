@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Terminal as TerminalIcon, Copy, Check, Laptop, Smartphone, Key, ShieldCheck } from 'lucide-react';
+import { copyTextToClipboard } from '../utils/clipboard';
 
 interface TerminalProps {
   localIp: string;
@@ -9,10 +10,12 @@ interface TerminalProps {
 export const Terminal: React.FC<TerminalProps> = ({ localIp, sshPort = 8022 }) => {
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCmd(id);
-    setTimeout(() => setCopiedCmd(null), 2000);
+  const copyToClipboard = async (text: string, id: string) => {
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedCmd(id);
+      setTimeout(() => setCopiedCmd(null), 2000);
+    }
   };
 
   const sshConnectCmd = `ssh -p ${sshPort} u0_a253@${localIp}`;

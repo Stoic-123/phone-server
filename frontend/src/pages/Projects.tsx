@@ -19,6 +19,7 @@ import { Project } from '../types';
 import { api } from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { copyTextToClipboard } from '../utils/clipboard';
 
 interface ProjectsProps {
   localIp: string;
@@ -82,10 +83,12 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
     }
   };
 
-  const copyPublicUrl = (url: string, id: string) => {
-    navigator.clipboard.writeText(url);
-    setCopiedUrlId(id);
-    setTimeout(() => setCopiedUrlId(null), 2000);
+  const copyPublicUrl = async (url: string, id: string) => {
+    const ok = await copyTextToClipboard(url);
+    if (ok) {
+      setCopiedUrlId(id);
+      setTimeout(() => setCopiedUrlId(null), 2000);
+    }
   };
 
   const fetchProjects = async () => {
@@ -308,11 +311,15 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                         {proj.public_url.replace('https://', '')}
                       </a>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
-                        onClick={() => copyPublicUrl(proj.public_url!, proj.id)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyPublicUrl(proj.public_url!, proj.id);
+                        }}
                         title="Copy Public URL"
-                        className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-1.5 rounded-xl hover:bg-white/10 text-zinc-300 hover:text-white transition-all active:scale-95"
                       >
                         {copiedUrlId === proj.id ? (
                           <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -324,15 +331,20 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                         href={proj.public_url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         title="Open in new tab"
-                        className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                        className="p-1.5 rounded-xl hover:bg-white/10 text-zinc-300 hover:text-white transition-all active:scale-95"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                       <button
-                        onClick={() => handleStopTunnel(proj.id)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStopTunnel(proj.id);
+                        }}
                         title="Disable Public URL"
-                        className="p-1 rounded-lg hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 transition-colors"
+                        className="p-1.5 rounded-xl hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 transition-all active:scale-95"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>

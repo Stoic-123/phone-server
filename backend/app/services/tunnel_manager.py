@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any
 
+from backend.app.core.config import settings
 from backend.app.database.session import get_db
 
 class TunnelManager:
@@ -51,50 +52,59 @@ class TunnelManager:
                     if project_id in self._urls:
                         del self._urls[project_id]
 
-        # Launch cloudflared ephemeral quick tunnel
-        cmd = ["cloudflared", "tunnel", "--url", f"http://127.0.0.1:{port}"]
+        log_dir = settings.LOGS_PATH / "tunnels"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"quick_{project_id}.log"
+        if log_file.exists():
+            try:
+                log_file.unlink()
+            except Exception:
+                pass
+
+        # Launch cloudflared ephemeral quick tunnel with logfile and http2 for fast fallback
+        cmd = [
+            "cloudflared", "tunnel",
+            "--protocol", "http2",
+            "--url", f"http://127.0.0.1:{port}",
+            "--logfile", str(log_file)
+        ]
         try:
             proc = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
             )
         except Exception as e:
             return False, f"Failed to spawn cloudflared: {str(e)}", None
 
-        url_captured = [None]
-        url_event = threading.Event()
+        # Poll the logfile directly to bypass pipe block buffering
+        found_url = None
+        url_pattern = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
+        start_time = time.time()
 
-        def stream_reader(pipe):
-            url_pattern = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
-            try:
-                for line in iter(pipe.readline, ''):
-                    if not line:
-                        break
-                    match = url_pattern.search(line)
-                    if match and not url_captured[0]:
-                        url_captured[0] = match.group(0)
-                        url_event.set()
-            except Exception:
-                pass
-            finally:
+        while time.time() - start_time < 20.0:
+            time.sleep(0.4)
+            if proc.poll() is not None:
+                # Process exited prematurely
+                err_content = ""
+                if log_file.exists():
+                    try:
+                        err_content = log_file.read_text(encoding="utf-8", errors="replace")[-300:]
+                    except Exception:
+                        pass
+                return False, f"Tunnel process exited with code {proc.returncode}. {err_content}", None
+
+            if log_file.exists():
                 try:
-                    pipe.close()
+                    content = log_file.read_text(encoding="utf-8", errors="replace")
+                    match = url_pattern.search(content)
+                    if match:
+                        found_url = match.group(0)
+                        break
                 except Exception:
                     pass
 
-        t_out = threading.Thread(target=stream_reader, args=(proc.stdout,), daemon=True)
-        t_err = threading.Thread(target=stream_reader, args=(proc.stderr,), daemon=True)
-        t_out.start()
-        t_err.start()
-
-        # Wait up to 10 seconds for Cloudflare to assign the random URL
-        matched = url_event.wait(timeout=10.0)
-
-        if matched and url_captured[0]:
-            found_url = url_captured[0]
+        if found_url:
             with self._lock:
                 self._processes[project_id] = proc
                 self._urls[project_id] = found_url
@@ -113,12 +123,11 @@ class TunnelManager:
 
             return True, f"Public URL generated: {found_url}", found_url
         else:
-            # Failed to capture in time
             try:
                 proc.terminate()
             except Exception:
                 pass
-            return False, "Failed to capture public URL from Cloudflare within 10 seconds. Check network connectivity.", None
+            return False, "Failed to capture public URL from Cloudflare within 20 seconds. Check network connectivity.", None
 
     def stop_tunnel(self, project_id: str) -> Tuple[bool, str]:
         with self._lock:

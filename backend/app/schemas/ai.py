@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from backend.app.schemas.base import BaseModel, Field
 
 class AiChatMessage(BaseModel):
     role: str # user, assistant, system, tool

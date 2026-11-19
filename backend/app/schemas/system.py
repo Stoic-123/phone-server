@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from pydantic import BaseModel
+from backend.app.schemas.base import BaseModel
 
 class CpuInfo(BaseModel):
     usage_percent: Optional[float] = None

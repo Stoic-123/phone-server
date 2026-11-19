@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel, Field
+from backend.app.schemas.base import BaseModel
 
 # Determine base directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent

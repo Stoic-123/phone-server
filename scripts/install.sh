@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # ==============================================================================
 # PocketDev Server - Automated Termux Installer for OPPO Reno2 F
-# Non-Root Development Server Runtime
+# Lightweight Non-Root Server Runtime (Zero-Rust Compilation)
 # ==============================================================================
 
 set -e
@@ -24,21 +24,11 @@ termux-wake-lock || true
 echo "[*] Updating package repositories..."
 pkg update -y && pkg upgrade -y
 
-# 4. Set compilation environment variables for Termux ARM64
-export ANDROID_API_LEVEL=29
-export CARGO_BUILD_TARGET="aarch64-linux-android"
-export RUSTFLAGS="-C link-arg=-landroid -C link-arg=-llog"
-
-# 5. Install Termux packages & compilers
-echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, clang, rust..."
+# 4. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl
+echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, tmux..."
 pkg install -y \
     python \
     python-pip \
-    clang \
-    rust \
-    binutils \
-    libffi \
-    openssl \
     nodejs-lts \
     openssh \
     git \
@@ -47,38 +37,28 @@ pkg install -y \
     termux-api \
     termux-tools
 
-# Try installing pre-compiled pydantic from tur-repo (Termux User Repo) to skip compilation
-pkg install -y tur-repo 2>/dev/null || true
-pkg install -y python-pydantic 2>/dev/null || true
-
-# 6. Setup Termux Storage access
+# 5. Setup Termux Storage access (prompts Android permission dialog)
 echo "[*] Configuring Termux storage permissions..."
 termux-setup-storage || true
 
-# 7. Setup OpenSSH host keys and configure port 8022
+# 6. Setup OpenSSH host keys and configure port 8022
 echo "[*] Setting up OpenSSH on port 8022..."
 if [ ! -f "$PREFIX/etc/ssh/ssh_host_rsa_key" ]; then
     ssh-keygen -A
 fi
 
+# Ensure sshd config has port 8022
 SSHD_CONFIG="$PREFIX/etc/ssh/sshd_config"
 if ! grep -q "^Port 8022" "$SSHD_CONFIG" 2>/dev/null; then
     echo "Port 8022" >> "$SSHD_CONFIG"
 fi
 
-# 8. Setup Python packages
+# 7. Setup Python packages
 POCKETDEV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$POCKETDEV_DIR"
 
-echo "[*] Setting up Python dependencies in $POCKETDEV_DIR..."
-python -m pip install --upgrade pip setuptools wheel
-
-# If pydantic is not yet installed from tur-repo, install with --no-build-isolation so ANDROID_API_LEVEL is passed
-if ! python -c "import pydantic" 2>/dev/null; then
-    echo "[*] Installing pydantic with --no-build-isolation..."
-    pip install --no-build-isolation pydantic || true
-fi
-
+echo "[*] Setting up lightweight Python runtime in $POCKETDEV_DIR..."
+python -m pip install --upgrade pip
 python -m pip install -r backend/requirements.txt
 
 # 8. Ensure project directory hierarchy exists

@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from backend.app.schemas.base import BaseModel, Field
 
 class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from backend.app.schemas.base import BaseModel, Field
 
 class GitDeploymentRequest(BaseModel):
     project_id: str

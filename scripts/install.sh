@@ -24,10 +24,16 @@ termux-wake-lock || true
 echo "[*] Updating package repositories..."
 pkg update -y && pkg upgrade -y
 
-# 4. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl
-echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, tmux..."
+# 4. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl, compilers
+echo "[*] Installing native toolchain & compilers..."
 pkg install -y \
     python \
+    python-pip \
+    clang \
+    rust \
+    binutils \
+    libffi \
+    openssl \
     nodejs-lts \
     openssh \
     git \

@@ -230,6 +230,13 @@ class ProcessManager:
                 except Exception:
                     pass
 
+            # Also stop any associated tunnel
+            try:
+                from backend.app.services.tunnel_manager import tunnel_manager
+                tunnel_manager.stop_tunnel(project_id)
+            except Exception:
+                pass
+
             return True, f"Project {project_id} stopped"
 
     def restart_project(self, project_id: str) -> Tuple[bool, str]:

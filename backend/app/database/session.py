@@ -70,6 +70,16 @@ def init_db() -> None:
         timestamp REAL NOT NULL
     );
     """)
+
+    # Safe migrations for existing SQLite databases
+    try:
+        cursor.execute("ALTER TABLE projects ADD COLUMN public_url TEXT DEFAULT NULL;")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE projects ADD COLUMN tunnel_pid INTEGER DEFAULT NULL;")
+    except Exception:
+        pass
     
     conn.commit()
     conn.close()

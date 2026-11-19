@@ -41,6 +41,7 @@ class ProjectService:
                     status=r["status"],
                     auto_restart=bool(r["auto_restart"]),
                     pid=r["pid"],
+                    public_url=r["public_url"] if "public_url" in r.keys() else None,
                     created_at=r["created_at"],
                     updated_at=r["updated_at"]
                 ))
@@ -68,6 +69,7 @@ class ProjectService:
                 status=r["status"],
                 auto_restart=bool(r["auto_restart"]),
                 pid=r["pid"],
+                public_url=r["public_url"] if "public_url" in r.keys() else None,
                 created_at=r["created_at"],
                 updated_at=r["updated_at"]
             )

@@ -29,6 +29,7 @@ class ProjectResponse(BaseModel):
     status: str # stopped, running, error
     auto_restart: bool
     pid: Optional[int] = None
+    public_url: Optional[str] = None
     created_at: float
     updated_at: float
 

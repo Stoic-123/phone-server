@@ -10,6 +10,9 @@ import {
   Code2,
   FolderGit2,
   AlertCircle,
+  Globe,
+  Copy,
+  Check,
   X
 } from 'lucide-react';
 import { Project } from '../types';
@@ -53,6 +56,37 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
 
   // Delete modal
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+
+  // Tunnel states
+  const [generatingTunnelId, setGeneratingTunnelId] = useState<string | null>(null);
+  const [copiedUrlId, setCopiedUrlId] = useState<string | null>(null);
+
+  const handleStartTunnel = async (id: string) => {
+    setGeneratingTunnelId(id);
+    try {
+      await api.startProjectTunnel(id);
+      await fetchProjects();
+    } catch (err: any) {
+      triggerError(`Failed to generate public URL: ${err.message}`);
+    } finally {
+      setGeneratingTunnelId(null);
+    }
+  };
+
+  const handleStopTunnel = async (id: string) => {
+    try {
+      await api.stopProjectTunnel(id);
+      await fetchProjects();
+    } catch (err: any) {
+      triggerError(`Failed to stop public URL: ${err.message}`);
+    }
+  };
+
+  const copyPublicUrl = (url: string, id: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedUrlId(id);
+    setTimeout(() => setCopiedUrlId(null), 2000);
+  };
 
   const fetchProjects = async () => {
     try {
@@ -258,6 +292,71 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                     </div>
                   )}
                 </div>
+
+                {/* Public URL Live Banner or Generator */}
+                {proj.public_url ? (
+                  <div className="mt-3 p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse shrink-0" />
+                      <a
+                        href={proj.public_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11.5px] font-mono text-sky-300 hover:text-white underline truncate"
+                        title={proj.public_url}
+                      >
+                        {proj.public_url.replace('https://', '')}
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => copyPublicUrl(proj.public_url!, proj.id)}
+                        title="Copy Public URL"
+                        className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                      >
+                        {copiedUrlId === proj.id ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <a
+                        href={proj.public_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open in new tab"
+                        className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        onClick={() => handleStopTunnel(proj.id)}
+                        title="Disable Public URL"
+                        className="p-1 rounded-lg hover:bg-rose-500/10 text-zinc-400 hover:text-rose-400 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : proj.status === 'running' ? (
+                  <button
+                    onClick={() => handleStartTunnel(proj.id)}
+                    disabled={generatingTunnelId === proj.id}
+                    className="mt-3 w-full py-2 px-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] text-zinc-300 hover:text-white text-[11px] font-medium transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-60"
+                  >
+                    {generatingTunnelId === proj.id ? (
+                      <>
+                        <RotateCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                        <span>Generating Public URL...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Generate Free Public URL</span>
+                      </>
+                    )}
+                  </button>
+                ) : null}
               </div>
 
               <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">

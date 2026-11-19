@@ -72,6 +72,7 @@ export interface Project {
   status: 'running' | 'stopped' | 'error';
   auto_restart: boolean;
   pid: number | null;
+  public_url?: string | null;
   created_at: number;
   updated_at: number;
 }

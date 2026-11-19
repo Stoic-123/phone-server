@@ -159,6 +159,18 @@ export const api = {
     });
   },
 
+  async startProjectTunnel(id: string): Promise<{ status: string; message: string; public_url: string }> {
+    return request<{ status: string; message: string; public_url: string }>(`/projects/${id}/tunnel/start`, {
+      method: 'POST'
+    });
+  },
+
+  async stopProjectTunnel(id: string): Promise<{ status: string; message: string }> {
+    return request<{ status: string; message: string }>(`/projects/${id}/tunnel/stop`, {
+      method: 'POST'
+    });
+  },
+
   async getProjectLogs(id: string, limit: number = 150): Promise<{ id: string; name: string; lines: string[]; total_lines: number }> {
     return request<{ id: string; name: string; lines: string[]; total_lines: number }>(`/projects/${id}/logs?limit=${limit}`);
   },

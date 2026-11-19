@@ -247,6 +247,29 @@ async def api_project_restart(request: Request):
         return JSONResponse(status_code=400, content={"detail": msg})
     return JSONResponse({"status": "success", "message": msg})
 
+async def api_project_tunnel_start(request: Request):
+    if not check_auth(request):
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    pid = request.path_params["id"]
+    proj = project_service.get_project(pid)
+    if not proj:
+        return JSONResponse(status_code=404, content={"detail": "Project not found"})
+    if proj.status != "running":
+        return JSONResponse(status_code=400, content={"detail": f"Project must be running to generate a public URL. Current status is {proj.status}."})
+    from backend.app.services.tunnel_manager import tunnel_manager
+    ok, msg, url = tunnel_manager.start_quick_tunnel(pid, proj.port)
+    if not ok:
+        return JSONResponse(status_code=400, content={"detail": msg})
+    return JSONResponse({"status": "success", "message": msg, "public_url": url})
+
+async def api_project_tunnel_stop(request: Request):
+    if not check_auth(request):
+        return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+    pid = request.path_params["id"]
+    from backend.app.services.tunnel_manager import tunnel_manager
+    ok, msg = tunnel_manager.stop_tunnel(pid)
+    return JSONResponse({"status": "success", "message": msg})
+
 async def api_project_logs(request: Request):
     if not check_auth(request):
         return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
@@ -420,6 +443,8 @@ routes = [
     Route("/api/projects/{id}/start", api_project_start, methods=["POST"]),
     Route("/api/projects/{id}/stop", api_project_stop, methods=["POST"]),
     Route("/api/projects/{id}/restart", api_project_restart, methods=["POST"]),
+    Route("/api/projects/{id}/tunnel/start", api_project_tunnel_start, methods=["POST"]),
+    Route("/api/projects/{id}/tunnel/stop", api_project_tunnel_stop, methods=["POST"]),
     Route("/api/projects/{id}/logs", api_project_logs, methods=["GET"]),
     Route("/api/projects/{id}", api_project_detail, methods=["GET"]),
     Route("/api/projects/{id}", api_project_update, methods=["PUT"]),

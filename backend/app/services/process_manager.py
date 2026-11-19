@@ -191,11 +191,6 @@ class ProcessManager:
             if proc:
                 try:
                     proc.terminate()
-                    try:
-                        proc.wait(timeout=1.0)
-                    except subprocess.TimeoutExpired:
-                        proc.kill()
-                        proc.wait(timeout=0.5)
                 except Exception:
                     pass
                 del self._processes[project_id]
@@ -239,7 +234,6 @@ class ProcessManager:
 
     def restart_project(self, project_id: str) -> Tuple[bool, str]:
         self.stop_project(project_id)
-        time.sleep(1)
         return self.start_project(project_id)
 
     def get_logs(self, project_id: str, limit: int = 150) -> List[str]:

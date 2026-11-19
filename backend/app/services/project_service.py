@@ -111,18 +111,25 @@ class ProjectService:
         if ptype == "python_fastapi":
             main_py = proj_dir / "main.py"
             if not main_py.exists():
-                main_py.write_text(f"""from fastapi import FastAPI
-
-app = FastAPI(title="{name}", description="PocketDev hosted API on OPPO Reno2 F")
-
-@app.get("/")
-def read_root():
-    return {{"status": "online", "project": "{name}", "device": "OPPO Reno2 F"}}
-
-@app.get("/health")
-def health():
-    return {{"status": "healthy"}}
-""", encoding="utf-8")
+                main_py.write_text(f'''try:
+    from fastapi import FastAPI
+    app = FastAPI(title="{name}", description="PocketDev hosted API on OPPO Reno2 F")
+    @app.get("/")
+    def read_root():
+        return {{"status": "online", "project": "{name}", "device": "OPPO Reno2 F"}}
+    @app.get("/health")
+    def health():
+        return {{"status": "healthy"}}
+except ImportError:
+    from starlette.applications import Starlette
+    from starlette.responses import JSONResponse
+    from starlette.routing import Route
+    async def root(req):
+        return JSONResponse({{"status": "online", "project": "{name}", "device": "OPPO Reno2 F"}})
+    async def health(req):
+        return JSONResponse({{"status": "healthy"}})
+    app = Starlette(routes=[Route("/", root), Route("/health", health)])
+''', encoding="utf-8")
         elif ptype == "python_flask":
             app_py = proj_dir / "app.py"
             if not app_py.exists():

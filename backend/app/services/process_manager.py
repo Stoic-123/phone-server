@@ -187,18 +187,16 @@ class ProcessManager:
     def stop_project(self, project_id: str) -> Tuple[bool, str]:
         with self._lock:
             proc = self._processes.get(project_id)
-            pid = None
 
             if proc:
-                pid = proc.pid
                 try:
                     proc.terminate()
                     try:
-                        proc.wait(timeout=3.0)
+                        proc.wait(timeout=1.0)
                     except subprocess.TimeoutExpired:
                         proc.kill()
-                        proc.wait(timeout=1.0)
-                except Exception as e:
+                        proc.wait(timeout=0.5)
+                except Exception:
                     pass
                 del self._processes[project_id]
 
@@ -209,12 +207,12 @@ class ProcessManager:
                     pass
                 del self._log_files[project_id]
 
-            # In case PID was recorded in DB but not in memory (e.g. after server restart)
+            # In case PID was recorded in DB but not in memory
             with get_db() as db:
                 cur = db.cursor()
                 cur.execute("SELECT pid, name FROM projects WHERE id = ?", (project_id,))
                 row = cur.fetchone()
-                if row and row["pid"]:
+                if row and row["pid"] and row["pid"] != os.getpid():
                     orphan_pid = row["pid"]
                     try:
                         os.kill(orphan_pid, signal.SIGTERM)
@@ -231,8 +229,11 @@ class ProcessManager:
             # Append to log
             log_file_path = self.get_project_log_path(project_id)
             if log_file_path.exists():
-                with open(log_file_path, "a", encoding="utf-8") as f:
-                    f.write(f"\n--- [PocketDev] Service stopped at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+                try:
+                    with open(log_file_path, "a", encoding="utf-8") as f:
+                        f.write(f"\n--- [PocketDev] Service stopped at {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n")
+                except Exception:
+                    pass
 
             return True, f"Project {project_id} stopped"
 

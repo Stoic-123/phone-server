@@ -42,11 +42,11 @@ if command -v ifconfig >/dev/null 2>&1; then
     LOCAL_IP=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n1 || echo "127.0.0.1")
 fi
 
-echo "[*] Launching PocketDev Server on http://0.0.0.0:8000..."
+echo "[*] Launching PocketDev Server on http://0.0.0.0:8888..."
 export PYTHONPATH="$POCKETDEV_DIR:$PYTHONPATH"
 
 # Run with python uvicorn
-python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 >> "$LOG_FILE" 2>&1 &
+python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8888 >> "$LOG_FILE" 2>&1 &
 SERVER_PID=$!
 echo "$SERVER_PID" > "$PID_FILE"
 
@@ -55,7 +55,7 @@ sleep 2
 if kill -0 "$SERVER_PID" 2>/dev/null; then
     echo "=================================================================="
     echo " [OK] PocketDev Server is running!"
-    echo " Dashboard URL  : http://${LOCAL_IP}:8000"
+    echo " Dashboard URL  : http://${LOCAL_IP}:8888"
     echo " SSH Access     : ssh -p 8022 $(whoami)@${LOCAL_IP}"
     echo " Server PID     : ${SERVER_PID}"
     echo " Logs           : ${LOG_FILE}"

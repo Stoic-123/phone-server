@@ -19,7 +19,7 @@ class Settings(BaseModel):
     
     # Server network bindings
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8888
     SSH_PORT: int = 8022
     
     # Filesystem paths

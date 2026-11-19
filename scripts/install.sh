@@ -24,13 +24,13 @@ termux-wake-lock || true
 echo "[*] Updating package repositories..."
 pkg update -y && pkg upgrade -y
 
-# 4. Enable TUR (Termux User Repository) for pre-compiled Python wheels (pydantic, etc.)
-echo "[*] Setting up Termux repositories and pre-compiled wheels..."
-pkg install -y tur-repo || true
-pkg install -y python-pydantic || true
+# 4. Set compilation environment variables for Termux ARM64
+export ANDROID_API_LEVEL=29
+export CARGO_BUILD_TARGET="aarch64-linux-android"
+export RUSTFLAGS="-C link-arg=-landroid -C link-arg=-llog"
 
-# 5. Install essential packages: Python, Node.js LTS, OpenSSH, Git, tmux, curl
-echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, tmux..."
+# 5. Install Termux packages & compilers
+echo "[*] Installing native toolchain: Python, Node.js, OpenSSH, Git, clang, rust..."
 pkg install -y \
     python \
     python-pip \
@@ -47,31 +47,38 @@ pkg install -y \
     termux-api \
     termux-tools
 
-# Export Android API level for maturin/rust in case compilation is triggered
-export ANDROID_API_LEVEL=29
+# Try installing pre-compiled pydantic from tur-repo (Termux User Repo) to skip compilation
+pkg install -y tur-repo 2>/dev/null || true
+pkg install -y python-pydantic 2>/dev/null || true
 
-# 5. Setup Termux Storage access (prompts Android permission dialog)
+# 6. Setup Termux Storage access
 echo "[*] Configuring Termux storage permissions..."
 termux-setup-storage || true
 
-# 6. Setup OpenSSH host keys and configure port 8022
+# 7. Setup OpenSSH host keys and configure port 8022
 echo "[*] Setting up OpenSSH on port 8022..."
 if [ ! -f "$PREFIX/etc/ssh/ssh_host_rsa_key" ]; then
     ssh-keygen -A
 fi
 
-# Ensure sshd config has port 8022
 SSHD_CONFIG="$PREFIX/etc/ssh/sshd_config"
 if ! grep -q "^Port 8022" "$SSHD_CONFIG" 2>/dev/null; then
     echo "Port 8022" >> "$SSHD_CONFIG"
 fi
 
-# 7. Setup Python virtual environment & backend packages
+# 8. Setup Python packages
 POCKETDEV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$POCKETDEV_DIR"
 
 echo "[*] Setting up Python dependencies in $POCKETDEV_DIR..."
 python -m pip install --upgrade pip setuptools wheel
+
+# If pydantic is not yet installed from tur-repo, install with --no-build-isolation so ANDROID_API_LEVEL is passed
+if ! python -c "import pydantic" 2>/dev/null; then
+    echo "[*] Installing pydantic with --no-build-isolation..."
+    pip install --no-build-isolation pydantic || true
+fi
+
 python -m pip install -r backend/requirements.txt
 
 # 8. Ensure project directory hierarchy exists

@@ -169,7 +169,7 @@ async def api_projects_list(request: Request):
     if not check_auth(request):
         return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
     projs = project_service.list_projects()
-    return JSONResponse([p.model_dump() if hasattr(p, "model_dump") else p.dict() for p in projs])
+    return JSONResponse([to_dict(p) for p in projs])
 
 async def api_projects_create(request: Request):
     if not check_auth(request):
@@ -183,7 +183,7 @@ async def api_projects_create(request: Request):
     try:
         create_obj = ProjectCreate(**body)
         res = project_service.create_project(create_obj)
-        return JSONResponse(res.model_dump() if hasattr(res, "model_dump") else res.dict(), status_code=201)
+        return JSONResponse(to_dict(res), status_code=201)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"detail": str(e)})
 
@@ -194,7 +194,7 @@ async def api_project_detail(request: Request):
     proj = project_service.get_project(pid)
     if not proj:
         return JSONResponse(status_code=404, content={"detail": "Project not found"})
-    return JSONResponse(proj.model_dump() if hasattr(proj, "model_dump") else proj.dict())
+    return JSONResponse(to_dict(proj))
 
 async def api_project_update(request: Request):
     if not check_auth(request):
@@ -209,7 +209,7 @@ async def api_project_update(request: Request):
         proj = project_service.update_project(pid, ProjectUpdate(**body))
         if not proj:
             return JSONResponse(status_code=404, content={"detail": "Project not found"})
-        return JSONResponse(proj.model_dump() if hasattr(proj, "model_dump") else proj.dict())
+        return JSONResponse(to_dict(proj))
     except ValueError as e:
         return JSONResponse(status_code=400, content={"detail": str(e)})
 

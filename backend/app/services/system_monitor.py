@@ -224,14 +224,33 @@ class SystemMonitorService:
         local_ip = "127.0.0.1"
         hostname = socket.gethostname()
         try:
-            # Connect UDP socket to detect local routable IP without sending traffic
+            # Connect UDP socket to detect default route IP
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.connect(("8.8.8.8", 80))
                 local_ip = s.getsockname()[0]
         except Exception:
             pass
 
-        interfaces = [{"name": "primary", "ip": local_ip}]
+        interfaces = []
+        # Attempt to discover all active IPv4 addresses using 'ip -4 -o addr' (available in Termux / Linux)
+        if shutil.which("ip"):
+            try:
+                ip_out = subprocess.check_output(["ip", "-4", "-o", "addr", "show"], text=True, timeout=2)
+                for line in ip_out.splitlines():
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        iface_name = parts[1]
+                        ip_with_mask = parts[3]
+                        ip_addr = ip_with_mask.split('/')[0]
+                        if not ip_addr.startswith("127."):
+                            interfaces.append({"name": iface_name, "ip": ip_addr})
+            except Exception:
+                pass
+
+        if not interfaces:
+            interfaces = [{"name": "primary", "ip": local_ip}]
+        elif local_ip == "127.0.0.1" and interfaces:
+            local_ip = interfaces[0]["ip"]
 
         # Network traffic calculation from /proc/net/dev if accessible
         bytes_sent = None

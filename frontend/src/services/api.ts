@@ -41,14 +41,27 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   if (!res.ok) {
-    let errorDetail = 'API request failed';
+    let errorDetail = `Request failed (${res.status})`;
     try {
       const text = await res.text();
       try {
         const errJson = JSON.parse(text);
-        errorDetail = errJson.detail || errJson.message || text;
+        errorDetail = errJson.detail || errJson.message || `Error ${res.status}`;
       } catch {
-        errorDetail = text || errorDetail;
+        const trimmed = (text || '').trim();
+        if (trimmed.startsWith('<') || trimmed.includes('<html') || trimmed.includes('<!DOCTYPE')) {
+          if (res.status === 502) {
+            errorDetail = '502 Bad Gateway: Server process or tunnel is currently unreachable.';
+          } else if (res.status === 504) {
+            errorDetail = '504 Gateway Timeout: Server took too long to respond.';
+          } else if (res.status === 503) {
+            errorDetail = '503 Service Unavailable: Tunnel or backend is restarting.';
+          } else {
+            errorDetail = `Network Gateway Error (${res.status}): Please check connection.`;
+          }
+        } else if (trimmed.length > 0 && trimmed.length < 300) {
+          errorDetail = trimmed;
+        }
       }
     } catch {
       errorDetail = `Request failed with status ${res.status}`;

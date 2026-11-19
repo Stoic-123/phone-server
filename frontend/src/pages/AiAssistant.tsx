@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User, AlertTriangle, Check, X, Sparkles, Smartphone, ShieldAlert } from 'lucide-react';
+import { Bot, Send, User, Check, X, Sparkles, ShieldCheck } from 'lucide-react';
 import { AiChatMessage, AiToolCall } from '../types';
 import { api } from '../services/api';
 
@@ -7,7 +7,7 @@ export const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<AiChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hello! I am **PocketDev AI Assistant**, running natively on your OPPO Reno2 F. I can monitor hardware health, diagnose stack traces, provide Helio P70 & ColorOS battery optimizations, and assist with process control.'
+      content: 'Hello! I am **PocketDev AI Assistant**, running directly on your OPPO Reno2 F.\n\nI can monitor real-time hardware status, diagnose application stack traces, suggest MediaTek Helio P70 optimizations, and help supervise project runtimes.'
     }
   ]);
   const [input, setInput] = useState('');
@@ -49,7 +49,7 @@ export const AiAssistant: React.FC = () => {
     if (!pendingToolCall || !pendingToolCall.action_id) return;
 
     try {
-      setActionStatus(confirmed ? 'Executing confirmed operation...' : 'Cancelled operation.');
+      setActionStatus(confirmed ? 'Executing approved operation...' : 'Cancelled operation.');
       const res = await api.aiExecuteAction(pendingToolCall.action_id, confirmed);
       setMessages((prev) => [
         ...prev,
@@ -76,47 +76,47 @@ export const AiAssistant: React.FC = () => {
   ];
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col bg-[#111827] border border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+    <div className="h-[calc(100vh-8rem)] flex flex-col glass-panel rounded-3xl shadow-2xl overflow-hidden max-w-5xl mx-auto">
       {/* Header */}
-      <div className="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+      <div className="p-4 px-6 glass-header flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-sky-500/10 text-sky-400 rounded-xl">
+          <div className="w-9 h-9 rounded-xl bg-white/[0.08] border border-white/10 flex items-center justify-center text-sky-400">
             <Bot className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-              PocketDev AI Assistant
-              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Restricted Sandbox
+            <h2 className="text-[15px] font-semibold text-white tracking-tight flex items-center gap-2">
+              PocketDev Assistant
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/20">
+                Sandboxed
               </span>
             </h2>
-            <p className="text-xs text-slate-400">Context-aware diagnostics & server management</p>
+            <p className="text-[11px] text-zinc-400">Hardware telemetry & runtime diagnostic engine</p>
           </div>
         </div>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((m, idx) => (
           <div
             key={idx}
             className={`flex items-start gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
           >
             <div
-              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              className={`w-8 h-8 rounded-2xl flex items-center justify-center shrink-0 text-[12px] font-medium shadow-sm ${
                 m.role === 'user'
-                  ? 'bg-sky-600 text-white'
-                  : 'bg-slate-800 text-sky-400 border border-slate-700'
+                  ? 'bg-white text-black font-semibold'
+                  : 'bg-white/[0.06] border border-white/10 text-sky-400'
               }`}
             >
               {m.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
 
             <div
-              className={`max-w-xl p-3.5 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-xl p-4 rounded-3xl text-[13px] leading-relaxed whitespace-pre-wrap ${
                 m.role === 'user'
-                  ? 'bg-sky-600 text-white rounded-tr-none'
-                  : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none shadow-sm'
+                  ? 'bg-white text-black rounded-tr-none font-medium'
+                  : 'glass-panel text-zinc-200 rounded-tl-none shadow-sm'
               }`}
             >
               {m.content}
@@ -124,26 +124,26 @@ export const AiAssistant: React.FC = () => {
           </div>
         ))}
 
-        {/* Pending Tool Confirmation Card */}
+        {/* Confirmation Card */}
         {pendingToolCall && (
-          <div className="max-w-xl mx-auto my-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
-            <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
-              <ShieldAlert className="w-4 h-4" />
-              Confirmation Required For Restricted Tool Execution
+          <div className="max-w-xl mx-auto my-4 p-5 glass-panel border-amber-500/30 rounded-3xl space-y-3">
+            <div className="flex items-center gap-2 text-amber-300 font-semibold text-[13px]">
+              <ShieldCheck className="w-4 h-4" />
+              Restricted Operation Confirmation
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-[12px] text-zinc-300">
               {pendingToolCall.description}
             </p>
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex items-center gap-2.5 pt-1">
               <button
                 onClick={() => handleToolDecision(true)}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg flex items-center gap-1 transition-colors"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[12px] font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-sm"
               >
-                <Check className="w-3.5 h-3.5" /> Approve & Execute
+                <Check className="w-3.5 h-3.5" /> Approve
               </button>
               <button
                 onClick={() => handleToolDecision(false)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg flex items-center gap-1 transition-colors"
+                className="px-4 py-2 bg-white/10 hover:bg-white/15 text-zinc-300 text-[12px] font-medium rounded-xl flex items-center gap-1.5 transition-all"
               >
                 <X className="w-3.5 h-3.5" /> Reject
               </button>
@@ -152,47 +152,47 @@ export const AiAssistant: React.FC = () => {
         )}
 
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-slate-400 pl-11">
+          <div className="flex items-center gap-2 text-[12px] text-zinc-400 pl-11">
             <Sparkles className="w-4 h-4 animate-spin text-sky-400" />
-            PocketDev AI is analyzing server state...
+            Analyzing telemetry and project logs...
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick suggestions */}
-      <div className="px-4 py-2 border-t border-slate-800/80 bg-slate-900/40 flex items-center gap-2 overflow-x-auto">
-        <span className="text-[11px] text-slate-500 shrink-0">Suggestions:</span>
+      {/* Suggested Prompts Pill Row */}
+      <div className="px-6 py-2.5 border-t border-white/[0.04] bg-white/[0.01] flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <span className="text-[11px] font-medium text-zinc-500 shrink-0">Quick Prompts:</span>
         {quickPrompts.map((p, i) => (
           <button
             key={i}
             onClick={() => handleSend(p)}
-            className="text-[11px] bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white px-2.5 py-1 rounded-full whitespace-nowrap transition-colors border border-slate-700/60"
+            className="text-[11px] bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white px-3 py-1 rounded-full whitespace-nowrap transition-all border border-white/[0.06]"
           >
             {p}
           </button>
         ))}
       </div>
 
-      {/* Input Form */}
+      {/* Input Box */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           handleSend();
         }}
-        className="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2"
+        className="p-3 px-4 glass-header border-t border-white/[0.06] flex items-center gap-2"
       >
         <input
           type="text"
-          placeholder="Ask PocketDev AI (e.g. 'diagnose errors', 'optimize battery', 'status')..."
+          placeholder="Ask PocketDev AI anything about your server..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500"
+          className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-2.5 text-[13px] text-white focus:outline-none focus:border-sky-400 transition-colors"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="p-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition-colors disabled:opacity-40"
+          className="p-2.5 bg-white text-black hover:bg-zinc-200 rounded-2xl transition-all disabled:opacity-40 shadow-sm"
         >
           <Send className="w-4 h-4" />
         </button>

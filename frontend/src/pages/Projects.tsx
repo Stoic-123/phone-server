@@ -9,8 +9,8 @@ import {
   ExternalLink,
   Code2,
   FolderGit2,
-  FileText,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { Project } from '../types';
 import { api } from '../services/api';
@@ -25,23 +25,33 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const activeHost = (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== '0.0.0.0' && !window.location.hostname.includes('trycloudflare.com'))
+    ? window.location.hostname
+    : (localIp || '127.0.0.1');
+
+  const triggerError = (msg: string) => {
+    setActionError(msg);
+    setTimeout(() => setActionError(null), 6000);
+  };
   
-  // Create Modal state
+  // Modal state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState<'python_fastapi' | 'python_flask' | 'nodejs_express' | 'static_html'>('python_fastapi');
-  const [port, setPort] = useState<number>(8081);
+  const [port, setPort] = useState<number>(8089);
   const [entrypoint, setEntrypoint] = useState('main.py');
   const [autoRestart, setAutoRestart] = useState(false);
   const [createSubmitting, setCreateSubmitting] = useState(false);
 
-  // Log Viewer state
+  // Logs state
   const [activeLogProject, setActiveLogProject] = useState<Project | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  // Delete Modal state
+  // Delete modal
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   const fetchProjects = async () => {
@@ -78,7 +88,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
       setDescription('');
       fetchProjects();
     } catch (err: any) {
-      alert(`Error creating project: ${err.message}`);
+      triggerError(`Error creating project: ${err.message}`);
     } finally {
       setCreateSubmitting(false);
     }
@@ -89,7 +99,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
       await api.startProject(id);
       fetchProjects();
     } catch (err: any) {
-      alert(`Start failed: ${err.message}`);
+      triggerError(`Start failed: ${err.message}`);
     }
   };
 
@@ -98,7 +108,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
       await api.stopProject(id);
       fetchProjects();
     } catch (err: any) {
-      alert(`Stop failed: ${err.message}`);
+      triggerError(`Stop failed: ${err.message}`);
     }
   };
 
@@ -107,7 +117,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
       await api.restartProject(id);
       fetchProjects();
     } catch (err: any) {
-      alert(`Restart failed: ${err.message}`);
+      triggerError(`Restart failed: ${err.message}`);
     }
   };
 
@@ -131,7 +141,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
       setProjectToDelete(null);
       fetchProjects();
     } catch (err: any) {
-      alert(`Failed to delete project: ${err.message}`);
+      triggerError(`Failed to delete project: ${err.message}`);
     }
   };
 
@@ -143,49 +153,67 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Project Runtime Manager</h2>
-          <p className="text-sm text-slate-400">
-            Self-hosted microservices and web servers running natively on OPPO Reno2 F
+          <h2 className="text-[22px] font-semibold text-white tracking-tight font-display">
+            Project Runtime Manager
+          </h2>
+          <p className="text-[13px] text-zinc-400 mt-0.5">
+            Independent microservices & static frontends running natively in Termux
           </p>
         </div>
         <button
           onClick={() => {
-            // Find next available port suggestion
             const usedPorts = projects.map(p => p.port);
-            let nextPort = 8081;
+            let nextPort = 8089;
             while (usedPorts.includes(nextPort)) nextPort++;
             setPort(nextPort);
             setIsCreateOpen(true);
           }}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-black hover:bg-zinc-200 rounded-2xl text-[13px] font-semibold transition-all shadow-[0_2px_14px_rgba(255,255,255,0.15)]"
         >
           <Plus className="w-4 h-4" />
           New Project
         </button>
       </div>
 
+      {actionError && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[13px] flex items-center justify-between gap-2.5 animate-fadeIn">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-400" />
+            <span>{actionError}</span>
+          </div>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-amber-400/80 hover:text-amber-300 text-xs px-2 py-1 rounded-lg hover:bg-amber-500/10"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {error && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-sm flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[13px] flex items-center gap-2.5">
           <AlertCircle className="w-5 h-5 shrink-0" />
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="py-12 text-center text-slate-500 text-sm">Loading projects...</div>
+        <div className="py-16 text-center text-zinc-500 text-[13px]">Loading projects...</div>
       ) : projects.length === 0 ? (
-        <div className="bg-[#111827] border border-slate-800 rounded-2xl p-12 text-center">
-          <FolderGit2 className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-white">No projects created yet</h3>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto mt-1 mb-6">
-            Create your first FastAPI, Node.js or static website project to start hosting on Android.
+        <div className="glass-panel rounded-3xl p-12 text-center max-w-lg mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-zinc-400 mx-auto mb-4">
+            <FolderGit2 className="w-6 h-6" />
+          </div>
+          <h3 className="text-[16px] font-semibold text-white tracking-tight">No active projects</h3>
+          <p className="text-[13px] text-zinc-400 mt-1.5 mb-6 leading-relaxed">
+            Create your first FastAPI, Node.js or static website project to start hosting on OPPO Reno2 F.
           </p>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-[13px] font-semibold rounded-2xl transition-all shadow-sm"
           >
             Create Project
           </button>
@@ -195,58 +223,58 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
           {projects.map((proj) => (
             <div
               key={proj.id}
-              className="bg-[#111827] border border-slate-800 rounded-xl p-5 flex flex-col justify-between hover:border-slate-700 transition-colors shadow-sm"
+              className="glass-panel rounded-3xl p-5 flex flex-col justify-between hover:border-white/20 transition-all duration-300 group"
             >
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h3 className="font-semibold text-white text-base truncate" title={proj.name}>
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-white text-[15px] truncate tracking-tight" title={proj.name}>
                       {proj.name}
                     </h3>
-                    <span className="text-xs font-mono text-slate-400 block mt-0.5">
-                      Port: <span className="text-sky-400 font-semibold">{proj.port}</span>
+                    <span className="text-[11px] font-mono text-zinc-400 block mt-0.5">
+                      Port <span className="text-sky-300 font-semibold">:{proj.port}</span>
                     </span>
                   </div>
                   <StatusBadge status={proj.status} />
                 </div>
 
-                <p className="text-xs text-slate-400 line-clamp-2 mt-2 mb-4 h-8">
+                <p className="text-[12px] text-zinc-400 line-clamp-2 mt-2 mb-4 h-8 leading-relaxed">
                   {proj.description || 'No description provided.'}
                 </p>
 
-                <div className="space-y-1.5 text-xs text-slate-400 bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 font-mono">
+                <div className="space-y-1.5 text-[11px] text-zinc-400 bg-black/40 p-3 rounded-2xl border border-white/[0.05] font-mono">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Runtime:</span>
-                    <span className="text-slate-300">{proj.type.replace('_', ' ')}</span>
+                    <span className="text-zinc-500">Runtime:</span>
+                    <span className="text-zinc-300">{proj.type.replace('_', ' ')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Entrypoint:</span>
-                    <span className="text-slate-300 truncate max-w-[150px]">{proj.entrypoint}</span>
+                    <span className="text-zinc-500">Entrypoint:</span>
+                    <span className="text-zinc-300 truncate max-w-[140px]">{proj.entrypoint}</span>
                   </div>
                   {proj.pid && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Process PID:</span>
+                      <span className="text-zinc-500">PID:</span>
                       <span className="text-emerald-400">{proj.pid}</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="mt-5 pt-3.5 border-t border-white/[0.06] flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   {proj.status === 'running' ? (
                     <>
                       <button
                         onClick={() => handleStop(proj.id)}
-                        title="Stop service"
-                        className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Stop"
+                        className="p-2 text-rose-300 hover:bg-rose-500/10 rounded-xl transition-all"
                       >
                         <Square className="w-4 h-4 fill-current" />
                       </button>
                       <button
                         onClick={() => handleRestart(proj.id)}
-                        title="Restart service"
-                        className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                        title="Restart"
+                        className="p-2 text-amber-300 hover:bg-amber-500/10 rounded-xl transition-all"
                       >
                         <RotateCw className="w-4 h-4" />
                       </button>
@@ -254,8 +282,8 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                   ) : (
                     <button
                       onClick={() => handleStart(proj.id)}
-                      title="Start service"
-                      className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                      title="Start"
+                      className="p-2 text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all"
                     >
                       <Play className="w-4 h-4 fill-current" />
                     </button>
@@ -263,19 +291,19 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
 
                   <button
                     onClick={() => handleViewLogs(proj)}
-                    title="View process logs"
-                    className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                    title="Console Logs"
+                    className="p-2 text-zinc-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                   >
                     <Terminal className="w-4 h-4" />
                   </button>
 
                   {proj.status === 'running' && (
                     <a
-                      href={`http://${localIp}:${proj.port}`}
+                      href={`http://${activeHost}:${proj.port}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title="Open in browser"
-                      className="p-2 text-sky-400 hover:bg-sky-500/10 rounded-lg transition-colors"
+                      title={`Open http://${activeHost}:${proj.port}`}
+                      className="p-2 text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 rounded-xl transition-all"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
@@ -284,8 +312,8 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
 
                 <button
                   onClick={() => setProjectToDelete(proj)}
-                  title="Delete project"
-                  className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                  title="Delete"
+                  className="p-2 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -295,51 +323,60 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
         </div>
       )}
 
-      {/* Create Project Modal */}
+      {/* Apple Styled Create Modal */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#111827] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-1">Create New Project</h3>
-            <p className="text-xs text-slate-400 mb-5">
-              PocketDev will automatically scaffold starter code and assign a local port.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel border-white/20 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setIsCreateOpen(false)}
+              className="absolute top-5 right-5 text-zinc-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-[18px] font-semibold text-white tracking-tight font-display mb-1">
+              Create Project
+            </h3>
+            <p className="text-[12px] text-zinc-400 mb-5">
+              Scaffolds starter code and assigns dedicated port on OPPO Reno2 F.
             </p>
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Project Name</label>
+                <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Project Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. My Fast API Server"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-3.5 py-2.5 text-[13px] text-white focus:outline-none focus:border-sky-400 transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Description (Optional)</label>
+                <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Description (Optional)</label>
                 <input
                   type="text"
-                  placeholder="Short summary of application purpose"
+                  placeholder="Short summary of project purpose"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-3.5 py-2.5 text-[13px] text-white focus:outline-none focus:border-sky-400 transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Runtime Type</label>
+                  <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Runtime</label>
                   <select
                     value={projectType}
                     onChange={(e: any) => {
                       setProjectType(e.target.value);
                       updateEntrypointDefault(e.target.value);
                     }}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-3 py-2.5 text-[13px] text-white focus:outline-none focus:border-sky-400 cursor-pointer"
                   >
-                    <option value="python_fastapi">Python (FastAPI)</option>
+                    <option value="python_fastapi">Python (FastAPI / Starlette)</option>
                     <option value="python_flask">Python (Flask)</option>
                     <option value="nodejs_express">Node.js (Express)</option>
                     <option value="static_html">Static Website (HTML/JS)</option>
@@ -347,7 +384,7 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Server Port</label>
+                  <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Port</label>
                   <input
                     type="number"
                     required
@@ -355,47 +392,47 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
                     max={65535}
                     value={port}
                     onChange={(e) => setPort(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-black/40 border border-white/10 rounded-2xl px-3.5 py-2.5 text-[13px] text-white focus:outline-none focus:border-sky-400 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Entrypoint File</label>
+                <label className="block text-[11px] font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Entrypoint</label>
                 <input
                   type="text"
                   required
                   value={entrypoint}
                   onChange={(e) => setEntrypoint(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-sky-500"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-3.5 py-2.5 text-[13px] font-mono text-white focus:outline-none focus:border-sky-400"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2.5 pt-1">
                 <input
                   type="checkbox"
                   id="auto_restart"
                   checked={autoRestart}
                   onChange={(e) => setAutoRestart(e.target.checked)}
-                  className="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-sky-500"
+                  className="rounded bg-black border-white/20 text-sky-500 focus:ring-0 w-4 h-4"
                 />
-                <label htmlFor="auto_restart" className="text-xs text-slate-300 select-none">
-                  Enable auto-restart watchdog if service crashes
+                <label htmlFor="auto_restart" className="text-[12px] text-zinc-300 select-none cursor-pointer">
+                  Auto-restart service watchdog if process exits
                 </label>
               </div>
 
-              <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="mt-6 flex justify-end gap-3 pt-3 border-t border-white/[0.06]">
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[13px] font-medium text-zinc-400 hover:text-white rounded-2xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 hover:bg-sky-500 rounded-lg transition-colors disabled:opacity-50"
+                  className="px-5 py-2 text-[13px] font-semibold text-black bg-white hover:bg-zinc-200 rounded-2xl transition-all shadow-md disabled:opacity-50"
                 >
                   {createSubmitting ? 'Creating...' : 'Create Project'}
                 </button>
@@ -405,42 +442,44 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
         </div>
       )}
 
-      {/* Log Viewer Drawer */}
+      {/* Terminal Log Drawer */}
       {activeLogProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl max-w-3xl w-full h-[80vh] flex flex-col shadow-2xl overflow-hidden">
-            <div className="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-sky-400" />
-                <h3 className="font-semibold text-white text-sm">
-                  Logs: {activeLogProject.name} (Port :{activeLogProject.port})
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel border-white/20 rounded-3xl max-w-3xl w-full h-[75vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 px-6 border-b border-white/[0.06] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-white/[0.05] text-sky-400">
+                  <Terminal className="w-4 h-4" />
+                </div>
+                <h3 className="font-semibold text-white text-[14px]">
+                  {activeLogProject.name} <span className="font-mono text-zinc-500 text-[12px]">(: {activeLogProject.port})</span>
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleViewLogs(activeLogProject)}
-                  className="px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-800 rounded transition-colors flex items-center gap-1"
+                  className="px-3 py-1 text-[11px] font-medium text-zinc-300 hover:text-white bg-white/10 rounded-xl transition-all flex items-center gap-1.5"
                 >
-                  <RotateCw className="w-3.5 h-3.5" /> Refresh
+                  <RotateCw className="w-3 h-3" /> Refresh
                 </button>
                 <button
                   onClick={() => setActiveLogProject(null)}
-                  className="px-2.5 py-1 text-xs font-medium text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
+                  className="p-1 text-zinc-400 hover:text-white rounded-lg transition-colors"
                 >
-                  Close
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div className="p-4 flex-1 overflow-y-auto font-mono text-xs text-slate-300 bg-black/60 selection:bg-sky-600/50">
+            <div className="p-5 flex-1 overflow-y-auto font-mono text-[11.5px] text-zinc-300 bg-black/60 selection:bg-sky-500/30">
               {loadingLogs ? (
-                <div className="text-slate-500">Reading process logs from storage...</div>
+                <div className="text-zinc-500">Reading logs from phone flash memory...</div>
               ) : logs.length === 0 ? (
-                <div className="text-slate-600 italic">No output lines recorded yet.</div>
+                <div className="text-zinc-600 italic">No output logged yet.</div>
               ) : (
                 <div className="space-y-1">
                   {logs.map((line, i) => (
-                    <div key={i} className="whitespace-pre-wrap leading-relaxed hover:bg-slate-900/50 px-1 rounded">
+                    <div key={i} className="whitespace-pre-wrap leading-relaxed hover:bg-white/[0.02] px-1 rounded">
                       {line}
                     </div>
                   ))}
@@ -451,12 +490,12 @@ export const Projects: React.FC<ProjectsProps> = ({ localIp }) => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={!!projectToDelete}
         title="Delete Project"
-        message={`Are you sure you want to permanently delete '${projectToDelete?.name}' and all associated files? This cannot be undone.`}
-        confirmLabel="Delete Permanently"
+        message={`Are you sure you want to permanently delete '${projectToDelete?.name}' and its files? This cannot be undone.`}
+        confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setProjectToDelete(null)}
       />

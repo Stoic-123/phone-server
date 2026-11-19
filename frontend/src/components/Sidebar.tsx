@@ -40,72 +40,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-[#0d121d] border-r border-slate-800 flex flex-col justify-between shrink-0 h-screen sticky top-0">
+    <aside className="w-64 glass-sidebar flex flex-col justify-between shrink-0 h-screen sticky top-0 z-30 select-none">
       <div>
         {/* Brand header */}
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-5 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-tr from-sky-600 to-indigo-600 rounded-xl text-white shadow-lg shadow-sky-900/30">
-              <Smartphone className="w-6 h-6" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-b from-sky-400 to-sky-600 flex items-center justify-center text-white shadow-[0_2px_12px_rgba(56,189,248,0.35)] border border-white/20">
+              <Smartphone className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-white text-base tracking-wide flex items-center gap-2">
-                PocketDev
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800">
-                  Android
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-white text-[15px] tracking-tight">PocketDev</span>
+                <span className="text-[10px] font-medium tracking-wider uppercase px-1.5 py-[1px] rounded-md bg-white/[0.08] text-sky-300 border border-white/10">
+                  Node
                 </span>
-              </h1>
-              <p className="text-xs text-slate-400 truncate">OPPO Reno2 F Server</p>
+              </div>
+              <p className="text-[11px] text-zinc-400 truncate mt-0.5">OPPO Reno2 F Server</p>
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between text-xs bg-slate-900/80 px-3 py-2 rounded-lg border border-slate-800">
+          {/* Status Capsule */}
+          <div className="mt-4 flex items-center justify-between px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md">
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
-              <span className="text-slate-300 font-medium">{isOnline ? 'Server Online' : 'Offline'}</span>
+              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-rose-500'}`} />
+              <span className="text-[12px] text-zinc-300 font-medium">
+                {isOnline ? 'Active Server' : 'Disconnected'}
+              </span>
             </div>
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              title="Refresh server status"
-              className="text-slate-400 hover:text-white transition-colors"
+              title="Refresh telemetry"
+              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-all active:rotate-180 duration-300"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-sky-400' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* Navigation list */}
-        <nav className="p-3 space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = currentTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? 'bg-sky-600/15 text-sky-400 border border-sky-500/20 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${active ? 'text-sky-400' : 'text-slate-500'}`} />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
+        {/* Navigation Section */}
+        <div className="px-3 py-2">
+          <span className="px-3 text-[11px] font-semibold text-zinc-500 uppercase tracking-wider block mb-1.5">
+            Management
+          </span>
+          <nav className="space-y-0.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSelectTab(item.id)}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                    active
+                      ? 'bg-white/[0.12] text-white shadow-sm border border-white/[0.12] font-semibold'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${active ? 'text-sky-400' : 'text-zinc-400'}`} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
-      {/* Footer & logout */}
-      <div className="p-4 border-t border-slate-800">
+      {/* Footer User Info & Sign Out */}
+      <div className="p-3 border-t border-white/[0.06]">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-zinc-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          Disconnect
         </button>
       </div>
     </aside>

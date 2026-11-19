@@ -61,10 +61,14 @@ export const App: React.FC = () => {
     return <Login onLoginSuccess={() => setIsAuthenticated(true)} />;
   }
 
-  const localIp = metrics?.network.local_ip || '127.0.0.1';
+  const browserHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isTunnel = browserHost.includes('trycloudflare.com') || browserHost.includes('.loca.lt') || browserHost.includes('.ngrok');
+  const activeIp = (!isTunnel && browserHost && browserHost !== '0.0.0.0')
+    ? browserHost
+    : (metrics?.network.local_ip || '127.0.0.1');
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f17] text-slate-100">
+    <div className="flex min-h-screen bg-[#06080c] text-zinc-100 font-sans selection:bg-white/20">
       {/* Navigation Sidebar */}
       <Sidebar
         currentTab={currentTab}
@@ -77,26 +81,34 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen">
-        {/* Top bar */}
-        <header className="h-16 border-b border-slate-800 bg-[#0d121d]/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20">
+        {/* Apple translucent top bar */}
+        <header className="h-16 border-b border-white/[0.06] bg-black/40 backdrop-blur-2xl px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <h1 className="text-base font-semibold text-white capitalize">
+            <h1 className="text-[15px] font-semibold text-white tracking-tight capitalize">
               {currentTab === 'ai' ? 'AI Server Assistant' : currentTab}
             </h1>
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-xs text-slate-400 select-none cursor-pointer">
+            <label className="flex items-center gap-2 text-[12px] text-zinc-400 select-none cursor-pointer hover:text-zinc-300 transition-colors">
               <input
                 type="checkbox"
                 checked={autoRefresh}
                 onChange={(e) => setAutoRefresh(e.target.checked)}
-                className="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-sky-500"
+                className="rounded bg-white/10 border-white/20 text-sky-500 focus:ring-0 focus:ring-offset-0 cursor-pointer"
               />
-              Auto-refresh (5s)
+              Live Telemetry (5s)
             </label>
-            <div className="text-xs font-mono px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300">
-              LAN: <span className="text-sky-400">{localIp}</span>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] backdrop-blur-md text-[12px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
+              <span className="text-zinc-400 font-medium">Host:</span>
+              <span className="font-mono text-zinc-200 font-semibold">{activeIp}</span>
+              {metrics?.network?.interfaces && metrics.network.interfaces.length > 1 && (
+                <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-zinc-300 font-mono" title={metrics.network.interfaces.map(i => `${i.name}: ${i.ip}`).join(', ')}>
+                  +{metrics.network.interfaces.length - 1}
+                </span>
+              )}
             </div>
           </div>
         </header>
@@ -109,9 +121,9 @@ export const App: React.FC = () => {
               onNavigateToProjects={() => setCurrentTab('projects')}
             />
           )}
-          {currentTab === 'projects' && <Projects localIp={localIp} />}
+          {currentTab === 'projects' && <Projects localIp={activeIp} />}
           {currentTab === 'deployments' && <Deployments />}
-          {currentTab === 'terminal' && <Terminal localIp={localIp} />}
+          {currentTab === 'terminal' && <Terminal localIp={activeIp} />}
           {currentTab === 'logs' && <Logs />}
           {currentTab === 'ai' && <AiAssistant />}
           {currentTab === 'settings' && <Settings />}

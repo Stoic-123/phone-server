@@ -390,6 +390,9 @@ async def api_ai_execute(request: Request):
 frontend_dist = settings.BASE_PATH / "frontend" / "dist"
 
 async def spa_index(request: Request):
+    full_path = request.path_params.get("full_path", "")
+    if full_path.startswith("api/") or request.url.path.startswith("/api/"):
+        return JSONResponse(status_code=404, content={"detail": f"API endpoint not found: {request.url.path}"})
     index_file = frontend_dist / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
@@ -411,16 +414,16 @@ routes = [
     Route("/api/system", api_system, methods=["GET"]),
     Route("/api/system/services", api_system_services, methods=["GET"]),
     Route("/api/system/logs", api_system_logs, methods=["GET"]),
-    # Projects
+    # Projects sub-routes (MUST BE BEFORE /{id})
     Route("/api/projects", api_projects_list, methods=["GET"]),
     Route("/api/projects", api_projects_create, methods=["POST"]),
-    Route("/api/projects/{id}", api_project_detail, methods=["GET"]),
-    Route("/api/projects/{id}", api_project_update, methods=["PUT"]),
-    Route("/api/projects/{id}", api_project_delete, methods=["DELETE"]),
     Route("/api/projects/{id}/start", api_project_start, methods=["POST"]),
     Route("/api/projects/{id}/stop", api_project_stop, methods=["POST"]),
     Route("/api/projects/{id}/restart", api_project_restart, methods=["POST"]),
     Route("/api/projects/{id}/logs", api_project_logs, methods=["GET"]),
+    Route("/api/projects/{id}", api_project_detail, methods=["GET"]),
+    Route("/api/projects/{id}", api_project_update, methods=["PUT"]),
+    Route("/api/projects/{id}", api_project_delete, methods=["DELETE"]),
     # Deployments
     Route("/api/deployments/git", api_deploy_git, methods=["POST"]),
     Route("/api/deployments/upload-zip", api_deploy_zip, methods=["POST"]),

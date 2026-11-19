@@ -87,6 +87,26 @@ class DeploymentService:
                     shutil.rmtree(temp_clone_dir, ignore_errors=True)
                     logs.append("Repository files moved into project root.")
 
+                # Auto-detect common static web directories (public/, dist/, build/, out/)
+                if proj.type == "static_html":
+                    for web_dir_name in ["public", "dist", "build", "out"]:
+                        web_dir = proj_dir / web_dir_name
+                        if web_dir.is_dir() and (web_dir / "index.html").exists():
+                            logs.append(f"Auto-detected static web root in '{web_dir_name}/'. Promoting files to root...")
+                            for item in list(web_dir.iterdir()):
+                                target = proj_dir / item.name
+                                if target.exists():
+                                    if target.is_dir():
+                                        shutil.rmtree(target)
+                                    else:
+                                        target.unlink()
+                                shutil.move(str(item), str(target))
+                            try:
+                                shutil.rmtree(web_dir)
+                            except Exception:
+                                pass
+                            break
+
             # Dependency installation
             if success and install_dependencies:
                 dep_ok, dep_log = self._install_dependencies(proj_dir, proj.type)
@@ -172,6 +192,26 @@ class DeploymentService:
                             shutil.rmtree(nested_dir)
                         except Exception:
                             pass
+
+                # Auto-detect common static web directories (public/, dist/, build/, out/)
+                if proj.type == "static_html":
+                    for web_dir_name in ["public", "dist", "build", "out"]:
+                        web_dir = proj_dir / web_dir_name
+                        if web_dir.is_dir() and (web_dir / "index.html").exists():
+                            logs.append(f"Auto-detected static web root in '{web_dir_name}/'. Promoting files to root...")
+                            for item in list(web_dir.iterdir()):
+                                target = proj_dir / item.name
+                                if target.exists():
+                                    if target.is_dir():
+                                        shutil.rmtree(target)
+                                    else:
+                                        target.unlink()
+                                shutil.move(str(item), str(target))
+                            try:
+                                shutil.rmtree(web_dir)
+                            except Exception:
+                                pass
+                            break
 
             if install_dependencies:
                 dep_ok, dep_log = self._install_dependencies(proj_dir, proj.type)

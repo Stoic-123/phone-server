@@ -121,6 +121,8 @@ async def api_initial_credentials(request: Request):
         })
     return JSONResponse({"initial_setup_required": False})
 
+from backend.app.schemas.base import to_dict
+
 # --- System Endpoints ---
 async def api_health(request: Request):
     return JSONResponse({
@@ -135,8 +137,7 @@ async def api_system(request: Request):
         return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
     active_services = process_manager.get_active_services_status()
     metrics = system_monitor.get_full_metrics(services=active_services)
-    # Serialize to dict
-    return JSONResponse(metrics.model_dump() if hasattr(metrics, "model_dump") else metrics.dict() if hasattr(metrics, "dict") else json.loads(metrics.json() if hasattr(metrics, "json") else json.dumps(metrics, default=lambda o: o.__dict__)))
+    return JSONResponse(to_dict(metrics))
 
 async def api_system_services(request: Request):
     if not check_auth(request):

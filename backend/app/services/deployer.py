@@ -153,6 +153,26 @@ class DeploymentService:
                 zf.extractall(proj_dir)
                 logs.append(f"Successfully unpacked {len(zf.namelist())} files.")
 
+                # Auto-flatten GitHub/GitLab ZIP archives wrapped in a root folder (e.g. repo-main/)
+                zip_top_dirs = {Path(m).parts[0] for m in zf.namelist() if len(Path(m).parts) > 1}
+                if len(zip_top_dirs) == 1:
+                    nested_dir_name = list(zip_top_dirs)[0]
+                    nested_dir = proj_dir / nested_dir_name
+                    if nested_dir.is_dir():
+                        logs.append(f"Auto-flattening GitHub repository folder: {nested_dir_name}")
+                        for item in nested_dir.iterdir():
+                            target = proj_dir / item.name
+                            if target.exists():
+                                if target.is_dir():
+                                    shutil.rmtree(target)
+                                else:
+                                    target.unlink()
+                            shutil.move(str(item), str(target))
+                        try:
+                            shutil.rmtree(nested_dir)
+                        except Exception:
+                            pass
+
             if install_dependencies:
                 dep_ok, dep_log = self._install_dependencies(proj_dir, proj.type)
                 logs.append(dep_log)
